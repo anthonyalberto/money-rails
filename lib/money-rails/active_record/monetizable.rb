@@ -23,7 +23,7 @@ module MoneyRails
 
           # Optional accessor to be run on an instance to detect currency 
           instance_currency_name = options[:with_model_currency] ||
-            options[:model_currency] || "currency"
+            options[:model_currency] || "currency_name"
           instance_currency_name = instance_currency_name.to_s
 
           # This attribute allows per column currency values
@@ -71,14 +71,16 @@ module MoneyRails
             end
 
             send("#{subunit_name}=", money.try(:cents))
-            send("#{instance_currency_name}=", money.try(:currency).try(:iso_code)) if self.respond_to?("#{instance_currency_name}=")
+            send("#{instance_currency_name}=", self.try(:currency).try(:iso).downcase.to_sym) if self.respond_to?("#{instance_currency_name}=")
+
+
 
             instance_variable_set "@#{name}", money
           end
 
           define_method "currency_for_#{name}" do
-            if self.respond_to?(instance_currency_name) && send(instance_currency_name).present? 
-              Money::Currency.find(send(instance_currency_name))
+            if self.respond_to?("currency") && send("currency").present?
+              Money::Currency.find(currency.iso.downcase.to_sym)
             elsif field_currency_name
               Money::Currency.find(field_currency_name)
             elsif self.class.respond_to?(:currency)
